@@ -1,0 +1,11 @@
+.env
+chatbot.db
+faiss_db/
+myenv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.git
+.gitignore
+README.md

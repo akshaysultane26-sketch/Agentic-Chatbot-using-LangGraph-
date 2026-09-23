@@ -1,0 +1,52 @@
+name: Streamlit AWS CICD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+
+jobs:
+  continuous-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint check (placeholder)
+        run: echo "CI checks passed"
+
+  build-and-push:
+    needs: continuous-integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.IMAGE_NAME }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Pull and run container
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.IMAGE_NAME }}:latest
+          docker stop agentic-chatbot || true
+          docker rm agentic-chatbot || true
+          docker run -d --name agentic-chatbot -p 8501:8501 \
+            -e GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
+            -e LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }} \
+            -e LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT }} \
+            -e LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }} \
+            -e LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.IMAGE_NAME }}:latest
