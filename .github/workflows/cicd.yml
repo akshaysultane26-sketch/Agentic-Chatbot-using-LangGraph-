@@ -38,12 +38,15 @@ jobs:
     needs: build-and-push
     runs-on: self-hosted
     steps:
+      - name: Clean up old Docker data
+        run: docker system prune -a -f --volumes
+
       - name: Pull and run container
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.IMAGE_NAME }}:latest
           docker stop agentic-chatbot || true
           docker rm agentic-chatbot || true
-          docker run -d --name agentic-chatbot -p 8501:8501 \
+          docker run -d --pull always --name agentic-chatbot -p 8501:8501 \
             -e GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
             -e LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }} \
             -e LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT }} \
