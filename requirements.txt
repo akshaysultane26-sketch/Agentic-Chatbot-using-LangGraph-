@@ -13,3 +13,4 @@ faiss-cpu
 pypdf
 duckduckgo-search
 sentence-transformers
+ddgs
